@@ -55,7 +55,11 @@ class CartItem(AbstractBaseModel):
         on_delete=CASCADE,
         verbose_name="Related product"
     )
-    quantity = PositiveSmallIntegerField(default=0, verbose_name="Quantity")
+    quantity = PositiveSmallIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        verbose_name="Quantity"
+    )
 
     objects = CartItemQuerySet().as_manager()
 
@@ -63,14 +67,15 @@ class CartItem(AbstractBaseModel):
         """Meta class."""
 
         ordering = ("-created_at",)
+        default_related_name = "cart_items"
 
     def __str__(self) -> str:
         """Magic method."""
         return f"{self.user.username}'s cart"
 
-    def get_products_price(self) -> float:
-        """Get the subtotal of a cart."""
-        return round(self.product.price * self.quantity, 2)
+    # def get_products_price(self) -> float:
+    #     """Get the subtotal of a cart."""
+    #     return round(self.product.price * self.quantity, 2)
 
 
 class Order(AbstractBaseModel):
@@ -119,6 +124,7 @@ class Order(AbstractBaseModel):
         """Meta class."""
 
         ordering = ("-created_at",)
+        default_related_name = "orders"
 
     def __str__(self) -> str:
         """Magic str method."""
@@ -155,7 +161,8 @@ class OrderItem(AbstractBaseModel):
         verbose_name="Price",
     )
     quantity = PositiveIntegerField(
-        default=0,
+        default=1,
+        validators=[MinValueValidator(1)],
         verbose_name="Ordered quantity",
     )
 
@@ -163,6 +170,7 @@ class OrderItem(AbstractBaseModel):
         """Meta class."""
 
         ordering = ("-created_at",)
+        default_related_name = "order_items"
 
     def __str__(self) -> str:
         """Magic str method."""
@@ -181,7 +189,7 @@ class Review(AbstractBaseModel):
         on_delete=CASCADE,
         verbose_name="Related product",
     )
-    author = ForeignKey(
+    user = ForeignKey(
         to=get_user_model(),
         on_delete=SET_DEFAULT,
         default="Deleted Accounts",

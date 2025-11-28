@@ -2,7 +2,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class IsAuthorOrReadOnly(BasePermission):
+class IsOwnerOrReadOnly(BasePermission):
     message = "Only Author can modify his reviews."
 
     def has_object_permission(self, request, view, obj):
@@ -10,4 +10,4 @@ class IsAuthorOrReadOnly(BasePermission):
 
         if request.method in SAFE_METHODS:
             return True
-        return request.user == obj.author
+        return request.user == obj.user

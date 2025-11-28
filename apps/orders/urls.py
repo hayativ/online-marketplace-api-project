@@ -3,15 +3,22 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 # Project modules
-from .views import ReviewViewSet
+from .views import ReviewViewSet, CartItemViewSet, OrderViewSet
 
 v1_router = DefaultRouter()
 v1_router.register(
-    r'products/(?P<product_id>\d+)/reviews',
+    r"products/(?P<product_id>\d+)/reviews",
     ReviewViewSet,
     basename="reviews",
+)
+v1_router.register(
+    "carts",
+    CartItemViewSet,
+    basename="cart",
 )
 
 urlpatterns = [
     path("", include(v1_router.urls)),
+    path("users/<int:user_id>/orders/", 
+         OrderViewSet.as_view(), name="user-orders"),
 ]
