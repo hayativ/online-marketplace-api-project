@@ -146,127 +146,6 @@ class Command(BaseCommand):
             )
         )
 
-    def __generate_cart_items(self, count: int = 20) -> None:
-        """
-        Generates cart items for testing purposes.
-        """
-
-        created_items: list[CartItem] = []
-        before: int = CartItem.objects.count()
-
-        users: QuerySet[CustomUser] = CustomUser.objects.all()
-        products: QuerySet[Product] = Product.objects.all()
-
-        for _ in range(count):
-            created_items.append(
-                CartItem(
-                    user=choice(users),
-                    product=choice(products),
-                    quantity=randint(1, 5),
-                )
-            )
-
-        CartItem.objects.bulk_create(created_items, ignore_conflicts=True)
-        after: int = CartItem.objects.count()
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Created {after - before} CartItem records."
-            )
-        )
-
-    def __generate_orders(self, count: int = 20) -> None:
-        """
-        Generates orders for testing purposes.
-        """
-
-        created_orders: list[Order] = []
-        before: int = Order.objects.count()
-
-        users: QuerySet[CustomUser] = CustomUser.objects.all()
-
-        for _ in range(count):
-            created_orders.append(
-                Order(
-                    user=choice(users),
-                    phone_number=f"+7701{randint(1000000, 9999999)}",
-                    delivery_address=f"City: {randint(1, 20)},"
-                    f" Street: {randint(20, 40)}",
-                    status=choice(["P", "S", "D"]),
-                )
-            )
-
-        Order.objects.bulk_create(created_orders, ignore_conflicts=True)
-        after: int = Order.objects.count()
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Created {after - before} Order records."
-            )
-        )
-
-    def __generate_order_items(self, count: int = 20) -> None:
-        """
-        Generates order items for testing purposes.
-        """
-
-        created_items: list[OrderItem] = []
-        before: int = OrderItem.objects.count()
-
-        orders: QuerySet[Order] = Order.objects.all()
-        products: QuerySet[Product] = Product.objects.all()
-
-        for _ in range(count):
-            product = choice(products)
-            created_items.append(
-                OrderItem(
-                    order=choice(orders),
-                    product=product,
-                    name=product.name,
-                    price=product.price,
-                    quantity=randint(1, 3),
-                )
-            )
-
-        OrderItem.objects.bulk_create(created_items, ignore_conflicts=True)
-        after: int = OrderItem.objects.count()
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Created {after - before} OrderItem records."
-            )
-        )
-
-    def __generate_reviews(self, count: int = 20) -> None:
-        """
-        Generates reviews for testing purposes.
-        """
-
-        created_reviews: list[Review] = []
-        before: int = Review.objects.count()
-
-        products: QuerySet[Product] = Product.objects.all()
-        authors: QuerySet[CustomUser] = CustomUser.objects.all()
-
-        for _ in range(count):
-            created_reviews.append(
-                Review(
-                    product=choice(products),
-                    author=choice(authors),
-                    rate=randint(1, 5),
-                    text=" ".join(choices(self.SOME_WORDS, k=10)).capitalize(),
-                )
-            )
-
-        Review.objects.bulk_create(created_reviews, ignore_conflicts=True)
-        after: int = Review.objects.count()
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Created {after - before} Review records."
-            )
-        )
-
     def __generate_stores(self, count: int = 20) -> None:
         """
         Generates stores for testing purposes.
@@ -318,7 +197,8 @@ class Command(BaseCommand):
                     StoreProductRelation(
                         store=store,
                         product=choice(products),
-                        in_stock=randint(1, 100),
+                        quantity=randint(100, 1000),
+                        price=uniform(1.0, 500.0),
                     )
                 )
 
@@ -335,6 +215,130 @@ class Command(BaseCommand):
             )
         )
 
+    def __generate_cart_items(self,) -> None:
+        """
+        Generates cart items for testing purposes.
+        """
+
+        created_items: list[CartItem] = []
+        before: int = CartItem.objects.count()
+
+        users: QuerySet[CustomUser] = CustomUser.objects.all()
+        store_products: QuerySet[StoreProductRelation] = (
+            StoreProductRelation.objects.all()
+        )
+
+        for sp in store_products:
+            created_items.append(
+                CartItem(
+                    user=choice(users),
+                    store_product=sp,
+                    quantity=randint(1, 5),
+                )
+            )
+
+        CartItem.objects.bulk_create(created_items, ignore_conflicts=True)
+        after: int = CartItem.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} CartItem records."
+            )
+        )
+
+    def __generate_orders(self, count: int = 20) -> None:
+        """
+        Generates orders for testing purposes.
+        """
+
+        created_orders: list[Order] = []
+        before: int = Order.objects.count()
+
+        users: QuerySet[CustomUser] = CustomUser.objects.all()
+
+        for _ in range(count):
+            created_orders.append(
+                Order(
+                    user=choice(users),
+                    phone_number=f"+7701{randint(1000000, 9999999)}",
+                    delivery_address=f"City: {randint(1, 20)},"
+                    f" Street: {randint(20, 40)}",
+                    status=choice(["P", "S", "D"]),
+                )
+            )
+
+        Order.objects.bulk_create(created_orders, ignore_conflicts=True)
+        after: int = Order.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} Order records."
+            )
+        )
+
+    def __generate_order_items(self,) -> None:
+        """
+        Generates order items for testing purposes.
+        """
+
+        created_items: list[OrderItem] = []
+        before: int = OrderItem.objects.count()
+
+        orders: QuerySet[Order] = Order.objects.all()
+        store_products: QuerySet[StoreProductRelation] = (
+            StoreProductRelation.objects.select_related("product")
+        )
+
+        for sp in store_products:
+            created_items.append(
+                OrderItem(
+                    order=choice(orders),
+                    store_product=sp,
+                    name=sp.product.name,
+                    quantity=randint(1, 5),
+                    price=sp.price,
+                )
+            )
+
+        OrderItem.objects.bulk_create(created_items, ignore_conflicts=True)
+        after: int = OrderItem.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} OrderItem records."
+            )
+        )
+
+    def __generate_reviews(self, count: int = 20) -> None:
+        """
+        Generates reviews for testing purposes.
+        """
+
+        created_reviews: list[Review] = []
+        before: int = Review.objects.count()
+
+        products: QuerySet[Product] = Product.objects.all()
+        users: QuerySet[CustomUser] = CustomUser.objects.all()
+
+        for _ in range(count):
+            created_reviews.append(
+                Review(
+                    product=choice(products),
+                    user=choice(users),
+                    rate=randint(1, 5),
+                    text=" ".join(choices(self.SOME_WORDS, k=10)).capitalize(),
+                )
+            )
+
+        Review.objects.bulk_create(created_reviews, ignore_conflicts=True)
+        after: int = Review.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} Review records."
+            )
+        )
+
     def handle(self, *args: tuple[Any, ...], **kwargs: dict[str, Any]) -> None:
         """Command entry point."""
 
@@ -343,12 +347,12 @@ class Command(BaseCommand):
         self.__generate_users(user_count=20)
         self.__generate_categories(category_count=20)
         self.__generate_products(product_count=20)
-        self.__generate_cart_items(count=20)
-        self.__generate_orders(count=20)
-        self.__generate_order_items(count=20)
-        self.__generate_reviews(count=20)
         self.__generate_stores(count=20)
         self.__generate_stores_products(products_per_store=5)
+        self.__generate_cart_items()
+        self.__generate_orders(count=20)
+        self.__generate_order_items()
+        self.__generate_reviews(count=20)
 
         self.stdout.write(
             "The whole process to generate data took: {} seconds".format(

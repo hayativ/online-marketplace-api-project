@@ -14,20 +14,20 @@ class CartItemAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
-        "product",
+        "store_product",
         "quantity",
         "created_at",
         "updated_at",
         "deleted_at",
     )
-    search_fields = ("user__email", "product__name")
+    search_fields = ("user__email", "store_product")
     list_filter = ("quantity",)
     ordering = ("-created_at",)
     fieldsets = [
         (
             "Cart Information",
             {
-                "fields": ["user", "product", "quantity"],
+                "fields": ["user", "store_product", "quantity"],
             },
         ),
         (
@@ -37,7 +37,7 @@ class CartItemAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "updated_at", "deleted_at",)
 
 
 @admin.register(OrderItem)
@@ -49,7 +49,7 @@ class OrderItemAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "order",
-        "product",
+        "store_product",
         "name",
         "price",
         "quantity",
@@ -57,7 +57,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         "updated_at",
         "deleted_at",
     )
-    search_fields = ("order", "product", "name")
+    search_fields = ("order", "store_product", "name")
     list_filter = ("quantity", "price")
     ordering = ("-created_at",)
     fieldsets = [
@@ -70,7 +70,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         (
             "Product Information",
             {
-                "fields": ["product", "name", "quantity", "price"],
+                "fields": ["store_product", "name", "quantity", "price"],
             },
         ),
         (
@@ -80,7 +80,7 @@ class OrderItemAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "updated_at", "deleted_at",)
 
 
 @admin.register(Order)
@@ -101,7 +101,6 @@ class Order(admin.ModelAdmin):
     )
     search_fields = (
         "user__email",
-        "product__name",
         "user__phone",
         "delivery_address",
         "status",
@@ -138,7 +137,7 @@ class Order(admin.ModelAdmin):
             },
         ),
     ]
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "updated_at", "deleted_at",)
 
 
 @admin.register(Review)
@@ -149,20 +148,20 @@ class ReviewItemAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "author",
+        "user",
         "product",
         "rate",
         "created_at",
         "updated_at",
         "deleted_at",
     )
-    search_fields = ("author__username", "author__email", "product__name")
+    search_fields = ("user__username", "user__email", "product__name")
     list_filter = ("rate",)
     fieldsets = [
         (
             "Review Information",
             {
-                "fields": ["author", "product", "rate", "text"],
+                "fields": ["user", "product", "rate", "text"],
             },
         ),
         (
@@ -172,4 +171,4 @@ class ReviewItemAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "updated_at", "deleted_at",)

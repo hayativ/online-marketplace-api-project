@@ -1,7 +1,13 @@
+# Python modules
+from typing import Any
+
 # Django modules
 from rest_framework.serializers import (
     ModelSerializer,
     StringRelatedField,
+    SerializerMethodField,
+    IntegerField,
+    DecimalField,
 )
 
 
@@ -12,16 +18,174 @@ from .models import (
     CartItem,
     Review,
 )
+from apps.users.models import (
+    CustomUser,
+)
 
 
 class ReviewSerializer(ModelSerializer):
-    """Serializer for review model."""
+    """Serializer for Review model."""
 
-    author = StringRelatedField()
+    user = StringRelatedField()
 
     class Meta:
         """Metadata."""
 
         model = Review
-        fields = ["id", "author", "rate", "text"]
-        read_only_fields = ["author"]
+        fields = ["id", "user", "rate", "text", "created_at", "updated_at"]
+        read_only_fields = ["user", "created_at", "updated_at"]
+
+
+class CartItemBaseSerializer(ModelSerializer):
+    """Serializer for CartItem model."""
+
+    total_product_price = SerializerMethodField(
+        method_name="get_total_product_price"
+    )
+
+    class Meta:
+        """Metadata."""
+
+        model = CartItem
+        fields = (
+            "id",
+            "store_product",
+            "quantity",
+            "total_product_price",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_total_product_price(self, obj: CartItem) -> float:
+        """Get total price for single position in a cart."""
+
+        return round(obj.store_product.price * obj.quantity, 2)
+
+
+class CartItemCreateSerializer(CartItemBaseSerializer):
+    """Serializer for CartItem model.
+    Handles the creation of new cart item."""
+
+    user = StringRelatedField()
+
+    class Meta:
+        """Metadata."""
+        model = CartItem
+        fields = (
+            "id",
+            "user",
+            "store_product",
+            "quantity",
+            "total_product_price",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ["user", "id", "created_at", "updated_at"]
+
+
+class CartItemUpdateSerializer(CartItemBaseSerializer):
+    """
+    Serializer for CartItem model.
+    Handles the partial update of a cart item.
+    """
+    user = StringRelatedField()
+
+    class Meta:
+        """Metadata."""
+        model = CartItem
+        fields = (
+            "id",
+            "user",
+            "store_product",
+            "quantity",
+            "total_product_price",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = [
+            "id",
+            "user",
+            "store_product",
+            "created_at",
+            "updated_at"
+        ]
+
+
+class CustomUserCartSerializer(ModelSerializer):
+    cart_items = CartItemBaseSerializer(many=True)
+    total_positions = IntegerField()
+
+    class Meta:
+        """Metadata."""
+        model = CustomUser
+        fields = (
+            "id",
+            "email",
+            "total_positions",
+            "cart_items",
+        )
+
+
+class OrderItemBaseSerializer(ModelSerializer):
+    """Order Item Base Serializer."""
+
+    total_product_price = SerializerMethodField(
+        method_name="get_total_product_price"
+    )
+
+    class Meta:
+        """Metadata."""
+
+        model = OrderItem
+        fields = (
+            "id",
+            "store_product",
+            "name",
+            "price",
+            "quantity",
+            "total_product_price",
+        )
+
+    def get_total_product_price(self, obj: OrderItem) -> float:
+        """Get total price for single position in an order."""
+
+        return round(obj.price * obj.quantity, 2)
+
+
+class OrderListCreateSerializer(ModelSerializer):
+    """Serializer for list of orders."""
+    MAX_PRICE_DIGITS = 10
+    MAX_DECIMAL_PLACES = 2
+
+    user = StringRelatedField()
+    order_items = OrderItemBaseSerializer(many=True)
+    total_positions = IntegerField(read_only=True)
+    total_price = DecimalField(
+        max_digits=MAX_PRICE_DIGITS,
+        decimal_places=MAX_DECIMAL_PLACES,
+        read_only=True,
+    )
+
+    class Meta:
+        """Metadata."""
+        model = Order
+        fields = (
+            "id",
+            "user",
+            "phone_number",
+            "delivery_address",
+            "status",
+            "total_positions",
+            "total_price",
+            "order_items",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ["status", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data: dict[Any, Any] = super().to_representation(instance)
+        data["total_positions"] = self.context.get("total_positions")
+        data["total_price"] = self.context.get("total_price")
+        return data
