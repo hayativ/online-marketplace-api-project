@@ -30,7 +30,7 @@ from rest_framework.status import (
 )
 from rest_framework.pagination import PageNumberPagination
 # Project modeules
-from apps.products.models import Product
+from apps.products.models import Product, StoreProductRelation
 from .models import Review, Order, OrderItem, CartItem
 from .serializers import (
     ReviewSerializer,
@@ -141,7 +141,7 @@ class CartItemViewSet(ViewSet):
     def retrieve(
         self,
         request: DRFRequest,
-        pk: int,
+        user_id: int,
         *args: tuple[Any, ...],
         **kwargs: dict[Any, Any],
     ) -> DRFResponse:
@@ -151,7 +151,7 @@ class CartItemViewSet(ViewSet):
         Parameters:
             request: DRFRequest
                 The request object.
-            pk: int
+            user_id: int
                 User's id.
             *args: list
                 Additional positional arguments.
@@ -163,7 +163,7 @@ class CartItemViewSet(ViewSet):
                 A response containing list of specified user's cart items.
         """
 
-        user: CustomUser = get_object_or_404(CustomUser, pk=pk)
+        user: CustomUser = get_object_or_404(CustomUser, pk=user_id)
 
         # Check if the request was sent by staff or cart's owner:
 
@@ -174,7 +174,7 @@ class CartItemViewSet(ViewSet):
 
         cart_items: QuerySet[CartItem] = CartItem.objects.filter(
             user=user,
-        ).select_related("product")
+        ).select_related("store_product")
 
         serializer: CartItemBaseSerializer = CartItemBaseSerializer(
             cart_items,
@@ -210,11 +210,10 @@ class CartItemViewSet(ViewSet):
                 A response containing information about added cart item.
         """
 
-        request_data = request.data
-        product: str = request_data.get("product")
-        quantity: str | int = request_data.get("quantity") or 1
+        store_product_id: int = request.data.get("store_product")
+        quantity: int = request.data.get("quantity") or 1
 
-        if not product:
+        if not store_product_id:
             return DRFResponse(
                 data={
                     "product": ["Product can not be null."],
@@ -222,9 +221,24 @@ class CartItemViewSet(ViewSet):
                 status=HTTP_400_BAD_REQUEST,
             )
 
+        store_product: StoreProductRelation = get_object_or_404(
+            StoreProductRelation,
+            id=store_product_id,
+        )
+
+        if quantity > store_product.quantity:
+            return DRFResponse(
+                data={
+                    "products": [
+                        f"Only {store_product.quantity} items are in stock."
+                    ],
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
+
         existing_cartitem: QuerySet[CartItem] = CartItem.objects.filter(
             user=request.user,
-            product=product,
+            store_product=store_product,
         ).first()
 
         if existing_cartitem:
@@ -235,7 +249,7 @@ class CartItemViewSet(ViewSet):
             )
         else:
             serializer: CartItemCreateSerializer = CartItemCreateSerializer(
-                data=request_data,
+                data=request.data,
             )
             if not serializer.is_valid():
                 return DRFResponse(
@@ -277,7 +291,8 @@ class CartItemViewSet(ViewSet):
                 A response containing info about an updated item.
         """
         try:
-            existing_cartitem: CartItem = CartItem.objects.get(pk=pk)
+            existing_cartitem: CartItem = CartItem.objects.filter(
+                id=pk).select_related("store_product").first()
         except CartItem.DoesNotExist:
             return DRFResponse(
                 data={
@@ -287,6 +302,20 @@ class CartItemViewSet(ViewSet):
             )
 
         self.check_object_permissions(request=request, obj=existing_cartitem)
+
+        quantity: int = request.data.get("quantity")
+
+        store_product: StoreProductRelation = existing_cartitem.store_product
+
+        if quantity > store_product.quantity:
+            return DRFResponse(
+                data={
+                    "products": [
+                        f"Only {store_product.quantity} items are in stock."
+                    ],
+                },
+                status=HTTP_400_BAD_REQUEST,
+            )
 
         serializer: CartItemUpdateSerializer = CartItemUpdateSerializer(
             instance=existing_cartitem,
@@ -427,7 +456,7 @@ class OrderCreateView(APIView):
         with transaction.atomic():
             user = request.user
             cart_items = CartItem.objects.filter(
-                user=user).select_related("product")
+                user=user).select_related("store_product")
 
             if not cart_items.exists():
                 return DRFResponse(
@@ -462,6 +491,11 @@ class OrderCreateView(APIView):
             total_positions: int = 0
 
             for item in cart_items:
+                store_product: StoreProductRelation = item.store_product
+
+                if store_product.quantity < item.quantity:
+                    continue
+
                 product: Product = item.product
                 name: str = item.product.name
                 price: float = item.product.price
@@ -478,6 +512,8 @@ class OrderCreateView(APIView):
                         quantity=quantity,
                     )
                 )
+
+                store_product -= item.quantity
 
             OrderItem.objects.bulk_create(order_items)
             cart_items.delete()

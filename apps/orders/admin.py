@@ -14,20 +14,20 @@ class CartItemAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
-        "product",
+        "store_product",
         "quantity",
         "created_at",
         "updated_at",
         "deleted_at",
     )
-    search_fields = ("user__email", "product__name")
+    search_fields = ("user__email", "store_product")
     list_filter = ("quantity",)
     ordering = ("-created_at",)
     fieldsets = [
         (
             "Cart Information",
             {
-                "fields": ["user", "product", "quantity"],
+                "fields": ["user", "store_product", "quantity"],
             },
         ),
         (
@@ -49,7 +49,7 @@ class OrderItemAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "order",
-        "product",
+        "store_product",
         "name",
         "price",
         "quantity",
@@ -57,7 +57,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         "updated_at",
         "deleted_at",
     )
-    search_fields = ("order", "product", "name")
+    search_fields = ("order", "store_product", "name")
     list_filter = ("quantity", "price")
     ordering = ("-created_at",)
     fieldsets = [
@@ -70,7 +70,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         (
             "Product Information",
             {
-                "fields": ["product", "name", "quantity", "price"],
+                "fields": ["store_product", "name", "quantity", "price"],
             },
         ),
         (
@@ -101,7 +101,6 @@ class Order(admin.ModelAdmin):
     )
     search_fields = (
         "user__email",
-        "product__name",
         "user__phone",
         "delivery_address",
         "status",

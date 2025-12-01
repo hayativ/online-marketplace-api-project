@@ -1,6 +1,6 @@
 # Django modules
 from django.urls import include, path
-from rest_framework_nested.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
 
 # Project modules
 from .views import (
@@ -17,8 +17,8 @@ v1_router.register(
     basename="reviews",
 )
 
-carts_list = CartItemViewSet.as_view({"get": "list"})
-users_cart = CartItemViewSet.as_view({"get": "retrieve", "post": "create"})
+carts_list = CartItemViewSet.as_view({"get": "list", "post": "create"})
+users_cart = CartItemViewSet.as_view({"get": "retrieve"})
 cart_item_update = CartItemViewSet.as_view(
     {"patch": "partial_update", "delete": "destroy"}
 )

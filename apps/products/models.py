@@ -95,6 +95,9 @@ class Store(AbstractBaseModel):
 
 class StoreProductRelation(Model):
     """Many to many relation table for products and Stores."""
+    MAX_NAME_LENGTH = 100
+    MAX_PRICE_DIGITS = 10
+    MAX_DECIMAL_PLACES = 2
 
     product = ForeignKey(
         to=Product,
@@ -106,8 +109,13 @@ class StoreProductRelation(Model):
         on_delete=CASCADE,
         verbose_name="Store",
     )
-    in_stock = IntegerField(
+    quantity = IntegerField(
         verbose_name="In stock",
+    )
+    price = DecimalField(
+        max_digits=MAX_PRICE_DIGITS,
+        decimal_places=MAX_DECIMAL_PLACES,
+        verbose_name="Price",
     )
 
     class Meta:

@@ -42,7 +42,6 @@ class CartItemBaseSerializer(ModelSerializer):
     total_product_price = SerializerMethodField(
         method_name="get_total_product_price"
     )
-    product = StringRelatedField()
 
     class Meta:
         """Metadata."""
@@ -50,7 +49,7 @@ class CartItemBaseSerializer(ModelSerializer):
         model = CartItem
         fields = (
             "id",
-            "product",
+            "store_product",
             "quantity",
             "total_product_price",
             "created_at",
@@ -61,7 +60,7 @@ class CartItemBaseSerializer(ModelSerializer):
     def get_total_product_price(self, obj: CartItem) -> float:
         """Get total price for single position in a cart."""
 
-        return round(obj.product.price * obj.quantity, 2)
+        return round(obj.store_product.price * obj.quantity, 2)
 
 
 class CartItemCreateSerializer(CartItemBaseSerializer):
@@ -76,7 +75,7 @@ class CartItemCreateSerializer(CartItemBaseSerializer):
         fields = (
             "id",
             "user",
-            "product",
+            "store_product",
             "quantity",
             "total_product_price",
             "created_at",
@@ -98,7 +97,7 @@ class CartItemUpdateSerializer(CartItemBaseSerializer):
         fields = (
             "id",
             "user",
-            "product",
+            "store_product",
             "quantity",
             "total_product_price",
             "created_at",
@@ -107,7 +106,7 @@ class CartItemUpdateSerializer(CartItemBaseSerializer):
         read_only_fields = [
             "id",
             "user",
-            "product",
+            "store_product",
             "created_at",
             "updated_at"
         ]
@@ -141,7 +140,7 @@ class OrderItemBaseSerializer(ModelSerializer):
         model = OrderItem
         fields = (
             "id",
-            "product",
+            "store_product",
             "name",
             "price",
             "quantity",

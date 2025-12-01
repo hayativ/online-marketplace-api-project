@@ -6,12 +6,13 @@ from django.db.models import (
     TextField,
     QuerySet,
     CASCADE,
-    SET_DEFAULT,
+    SET_NULL,
     ForeignKey,
     IntegerField,
     DecimalField,
     PositiveSmallIntegerField,
     PositiveIntegerField,
+    PROTECT,
 )
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator
@@ -46,14 +47,17 @@ class CartItem(AbstractBaseModel):
     user = ForeignKey(
         to=get_user_model(),
         on_delete=CASCADE,
-        blank=True,
-        null=True,
         verbose_name="User",
     )
-    product = ForeignKey(
-        to=Product,
-        on_delete=CASCADE,
-        verbose_name="Related product"
+    # product = ForeignKey(
+    #     to=Product,
+    #     on_delete=CASCADE,
+    #     verbose_name="Related product"
+    # )
+    store_product = ForeignKey(
+        to=StoreProductRelation,
+        on_delete=PROTECT,
+        verbose_name="Product",
     )
     quantity = PositiveSmallIntegerField(
         default=1,
@@ -73,10 +77,6 @@ class CartItem(AbstractBaseModel):
         """Magic method."""
         return f"{self.user.username}'s cart"
 
-    # def get_products_price(self) -> float:
-    #     """Get the subtotal of a cart."""
-    #     return round(self.product.price * self.quantity, 2)
-
 
 class Order(AbstractBaseModel):
     """
@@ -93,9 +93,9 @@ class Order(AbstractBaseModel):
 
     user = ForeignKey(
         to=get_user_model(),
-        on_delete=CASCADE,
-        blank=True,
+        on_delete=SET_NULL,
         null=True,
+        blank=True,
         verbose_name="User",
     )
     phone_number = CharField(
@@ -146,10 +146,10 @@ class OrderItem(AbstractBaseModel):
         on_delete=CASCADE,
         verbose_name="Order",
     )
-    product = ForeignKey(
-        to=Product,
-        on_delete=CASCADE,
-        verbose_name="Related product",
+    store_product = ForeignKey(
+        to=StoreProductRelation,
+        on_delete=PROTECT,
+        verbose_name="Product",
     )
     name = CharField(
         max_length=MAX_ORDER_ITEM_NAME_LENGTH,
@@ -186,13 +186,14 @@ class Review(AbstractBaseModel):
 
     product = ForeignKey(
         to=Product,
-        on_delete=CASCADE,
+        on_delete=SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Related product",
     )
     user = ForeignKey(
         to=get_user_model(),
-        on_delete=SET_DEFAULT,
-        default="Deleted Accounts",
+        on_delete=CASCADE,
         verbose_name="Author",
     )
     rate = IntegerField(
