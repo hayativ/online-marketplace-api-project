@@ -1,9 +1,14 @@
 # Django modules
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework_nested.routers import DefaultRouter
 
 # Project modules
-from .views import ReviewViewSet, CartItemViewSet, OrderViewSet
+from .views import (
+    ReviewViewSet,
+    CartItemViewSet,
+    OrderListView,
+    OrderCreateView
+)
 
 v1_router = DefaultRouter()
 v1_router.register(
@@ -11,14 +16,21 @@ v1_router.register(
     ReviewViewSet,
     basename="reviews",
 )
-v1_router.register(
-    "carts",
-    CartItemViewSet,
-    basename="cart",
+
+carts_list = CartItemViewSet.as_view({"get": "list"})
+users_cart = CartItemViewSet.as_view({"get": "retrieve", "post": "create"})
+cart_item_update = CartItemViewSet.as_view(
+    {"patch": "partial_update", "delete": "destroy"}
 )
 
 urlpatterns = [
     path("", include(v1_router.urls)),
-    path("users/<int:user_id>/orders/", 
-         OrderViewSet.as_view(), name="user-orders"),
+    path("users/carts/", carts_list, name="users-carts"),
+    path("users/<int:user_id>/cart/", users_cart, name="user-cart"),
+    path("users/carts/<int:pk>/",
+         cart_item_update, name="user-cart-update-destroy"),
+    path("users/<int:user_id>/orders/",
+         OrderListView.as_view(), name="user-orders"),
+    path("users/<int:user_id>/order_create/",
+         OrderCreateView.as_view(), name="order-create"),
 ]

@@ -18,7 +18,7 @@ from django.core.validators import RegexValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 # Project modules
-from apps.products.models import Product
+from apps.products.models import Product, StoreProductRelation
 from apps.abstracts.models import AbstractBaseModel
 
 
