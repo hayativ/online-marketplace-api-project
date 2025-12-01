@@ -6,6 +6,7 @@ from rest_framework.viewsets import (
     ModelViewSet,
     ViewSet,
 )
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.views import APIView
 from rest_framework.generics import (
     ListAPIView,
@@ -27,6 +28,7 @@ from rest_framework.status import (
     HTTP_204_NO_CONTENT,
     HTTP_400_BAD_REQUEST,
     HTTP_404_NOT_FOUND,
+    HTTP_405_METHOD_NOT_ALLOWED,
 )
 from rest_framework.pagination import PageNumberPagination
 # Project modeules
@@ -39,10 +41,12 @@ from .serializers import (
     CartItemUpdateSerializer,
     CustomUserCartSerializer,
     OrderListCreateSerializer,
+    OrderCreateResponse400Serializer,
+    OrderCreateResponse404Serializer,
+    HTTP405MethodNotAllowedSerializer,
 )
 from .permissions import IsOwnerOrReadOnly
 from apps.users.models import CustomUser
-
 
 class ReviewViewSet(ModelViewSet):
     """
@@ -377,7 +381,6 @@ class OrderListView(ListAPIView):
 
     serializer_class = OrderListCreateSerializer
     permission_classes = [IsAuthenticated]
-
     def get_queryset(self) -> QuerySet[Order]:
         """Get a list of user's orders."""
         user = get_object_or_404(CustomUser, pk=self.kwargs.get("user_id"))
@@ -429,7 +432,30 @@ class OrderCreateView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    @extend_schema(
+        summary="Order create",
+        # description="My custom deprecation reason"
 
+        request=OrderListCreateSerializer,
+        responses={
+            HTTP_201_CREATED: OpenApiResponse(
+                description="Successful order creation.",
+                response=OrderListCreateSerializer,
+            ),
+            HTTP_400_BAD_REQUEST: OpenApiResponse(
+                description="Unsuccessful order creation.",
+                response=OrderCreateResponse400Serializer,
+            ),
+            HTTP_404_NOT_FOUND: OpenApiResponse(
+                description="Not found",
+                response=OrderCreateResponse404Serializer,
+            ),
+            HTTP_405_METHOD_NOT_ALLOWED: OpenApiResponse(
+                description="Methodnot allowed.",
+                response=HTTP405MethodNotAllowedSerializer,
+            ),
+        }
+    )
     def post(
         self,
         request: DRFRequest,

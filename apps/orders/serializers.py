@@ -8,6 +8,9 @@ from rest_framework.serializers import (
     SerializerMethodField,
     IntegerField,
     DecimalField,
+    Serializer, 
+    ListField, 
+    CharField,
 )
 
 
@@ -21,6 +24,51 @@ from .models import (
 from apps.users.models import (
     CustomUser,
 )
+
+
+class OrderCreateResponse400Serializer(Serializer):
+    """
+    Serializer for unsuccessful order creation responses.
+    """
+    cart_items = ListField(child=CharField())
+
+    class Meta:
+        fields = ("cart_items",)
+
+
+class OrderCreateResponse404Serializer(Serializer):
+    """
+    Serializer for unsuccessful order creation responses.
+    """
+
+    phone_number = ListField(
+        child=CharField(),
+        required=False,
+    )
+    delivery_address = ListField(
+        child=CharField(),
+        required=False,
+    )
+
+    class Meta:
+        """Customization of the Serializer metadata."""
+
+        fields = (
+            "phone_number",
+            "delivery_address",
+            )
+
+class HTTP405MethodNotAllowedSerializer(Serializer):
+    """
+    Serializer for HTTP 405 Method Not Allowed response.
+    """
+    detail = CharField()
+
+    class Meta:
+        """Customization of the Serializer metadata."""
+        fileds = (
+            "detail",
+        )
 
 
 class ReviewSerializer(ModelSerializer):
