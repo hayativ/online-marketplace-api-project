@@ -49,11 +49,6 @@ class CartItem(AbstractBaseModel):
         on_delete=CASCADE,
         verbose_name="User",
     )
-    # product = ForeignKey(
-    #     to=Product,
-    #     on_delete=CASCADE,
-    #     verbose_name="Related product"
-    # )
     store_product = ForeignKey(
         to=StoreProductRelation,
         on_delete=PROTECT,

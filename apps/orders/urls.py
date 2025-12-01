@@ -26,11 +26,11 @@ cart_item_update = CartItemViewSet.as_view(
 urlpatterns = [
     path("", include(v1_router.urls)),
     path("users/carts/", carts_list, name="users-carts"),
-    path("users/<int:user_id>/cart/", users_cart, name="user-cart"),
+    path("users/<int:user_id>/carts/", users_cart, name="user-cart"),
     path("users/carts/<int:pk>/",
          cart_item_update, name="user-cart-update-destroy"),
     path("users/<int:user_id>/orders/",
          OrderListView.as_view(), name="user-orders"),
-    path("users/<int:user_id>/order_create/",
+    path("users/orders/",
          OrderCreateView.as_view(), name="order-create"),
 ]

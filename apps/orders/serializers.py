@@ -32,8 +32,16 @@ class ReviewSerializer(ModelSerializer):
         """Metadata."""
 
         model = Review
-        fields = ["id", "user", "rate", "text", "created_at", "updated_at"]
-        read_only_fields = ["user", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "user",
+            "rate",
+            "text",
+            "created_at",
+            "updated_at",
+            "deleted_at",
+        ]
+        read_only_fields = ["user", "created_at", "updated_at", "deleted_at",]
 
 
 class CartItemBaseSerializer(ModelSerializer):
@@ -54,8 +62,9 @@ class CartItemBaseSerializer(ModelSerializer):
             "total_product_price",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "deleted_at",]
 
     def get_total_product_price(self, obj: CartItem) -> float:
         """Get total price for single position in a cart."""
@@ -80,8 +89,15 @@ class CartItemCreateSerializer(CartItemBaseSerializer):
             "total_product_price",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
-        read_only_fields = ["user", "id", "created_at", "updated_at"]
+        read_only_fields = [
+            "user",
+            "id",
+            "created_at",
+            "updated_at",
+            "deleted_at",
+        ]
 
 
 class CartItemUpdateSerializer(CartItemBaseSerializer):
@@ -102,6 +118,7 @@ class CartItemUpdateSerializer(CartItemBaseSerializer):
             "total_product_price",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
         read_only_fields = [
             "id",
@@ -109,6 +126,7 @@ class CartItemUpdateSerializer(CartItemBaseSerializer):
             "store_product",
             "created_at",
             "updated_at"
+            "deleted_at",
         ]
 
 
@@ -145,6 +163,7 @@ class OrderItemBaseSerializer(ModelSerializer):
             "price",
             "quantity",
             "total_product_price",
+            "deleted_at",
         )
 
     def get_total_product_price(self, obj: OrderItem) -> float:
@@ -181,8 +200,10 @@ class OrderListCreateSerializer(ModelSerializer):
             "order_items",
             "created_at",
             "updated_at",
+            "deleted_at",
         )
-        read_only_fields = ["status", "created_at", "updated_at"]
+        read_only_fields = ["status", "created_at",
+                            "updated_at", "deleted_at",]
 
     def to_representation(self, instance):
         data: dict[Any, Any] = super().to_representation(instance)

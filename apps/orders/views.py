@@ -496,9 +496,9 @@ class OrderCreateView(APIView):
                 if store_product.quantity < item.quantity:
                     continue
 
-                product: Product = item.product
-                name: str = item.product.name
-                price: float = item.product.price
+                store_product: StoreProductRelation = item.store_product
+                name: str = store_product.product.name
+                price: float = store_product.price
                 quantity: int = item.quantity
                 total_price += round(price * quantity, 2)
                 total_positions += quantity
@@ -506,14 +506,15 @@ class OrderCreateView(APIView):
                 order_items.append(
                     OrderItem(
                         order=order,
-                        product=product,
+                        store_product=store_product,
                         name=name,
                         price=price,
                         quantity=quantity,
                     )
                 )
 
-                store_product -= item.quantity
+                store_product.quantity -= item.quantity
+                store_product.save()
 
             OrderItem.objects.bulk_create(order_items)
             cart_items.delete()
