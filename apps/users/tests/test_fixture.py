@@ -20,7 +20,6 @@ def test_another_using_fixture(my_fixture: str) -> None:
     assert my_fixture.upper() == "HELLO, FIXTURE!", f"{my_fixture.upper()} must be equal 'HELLO, FIXTURE!'"
 
 
-
 @pytest.fixture
 def user_repo() -> UserRepository:
     """Fixture that provides a UserRepository with some pre-populated users."""
