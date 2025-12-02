@@ -11,7 +11,7 @@ from django.utils import timezone
 
 # Project modules
 from apps.users.models import CustomUser
-from apps.products.models import Category, Product
+from apps.products.models import Category, Product, Store, StoreProductRelation
 from apps.orders.models import CartItem, Order, OrderItem, Review
 
 
@@ -68,7 +68,7 @@ class Command(BaseCommand):
                     password=USER_PASSWORD,
                     first_name=first_name,
                     last_name=last_name,
-                    phone=f"+7701{randint(1000000,9999999)}",
+                    phone=f"+7701{randint(1000000, 9999999)}",
                     is_seller=choice([True, False]),
                     address=f"Street {randint(1, 50)}, City {randint(1, 10)}",
                     date_joined=timezone.now(),
@@ -119,16 +119,17 @@ class Command(BaseCommand):
         before: int = Product.objects.count()
 
         categories: QuerySet[Category] = Category.objects.all()
-        sellers: QuerySet[CustomUser] = CustomUser.objects.filter(is_seller=True)
-        if not sellers.exists():
-            sellers = CustomUser.objects.all()
+        # sellers: QuerySet[CustomUser] = CustomUser.objects.filter(
+        # is_seller=True)
+        # if not sellers.exists():
+        #     sellers = CustomUser.objects.all()
 
         for i in range(product_count):
             name: str = " ".join(choices(self.SOME_WORDS, k=2)).capitalize()
             created_products.append(
                 Product(
                     category=choice(categories),
-                    seller=choice(sellers),
+                    # seller=choice(sellers),
                     name=name,
                     description=f"Description for {name}",
                     price=round(uniform(10.0, 500.0), 2),
@@ -145,7 +146,76 @@ class Command(BaseCommand):
             )
         )
 
-    def __generate_cart_items(self, count: int = 20) -> None:
+    def __generate_stores(self, count: int = 20) -> None:
+        """
+        Generates stores for testing purposes.
+        """
+        created_stores: list[Store] = []
+        before: int = Store.objects.count()
+
+        owners: QuerySet[CustomUser] = CustomUser.objects.all()
+
+        i: int
+        for i in range(count):
+            created_stores.append(
+                Store(
+                    owner=choice(owners),
+                    name=f"Store № {i}",
+                    description=" ".join(
+                        choices(
+                            self.SOME_WORDS,
+                            k=10
+                        )).capitalize(),
+                )
+            )
+
+        Store.objects.bulk_create(created_stores, ignore_conflicts=True)
+        after: int = Store.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} Store records."
+            )
+        )
+
+    def __generate_stores_products(self, products_per_store: int = 5):
+        """
+        Generates many to many relationships between stores and products.
+        """
+
+        before: int = StoreProductRelation.objects.count()
+
+        store_products_to_add: list[StoreProductRelation] = []
+        stores: QuerySet[Store] = Store.objects.all()
+        products: QuerySet[Product] = Product.objects.all()
+
+        store: Store
+
+        for store in stores:
+            for _ in range(products_per_store):
+                store_products_to_add.append(
+                    StoreProductRelation(
+                        store=store,
+                        product=choice(products),
+                        quantity=randint(100, 1000),
+                        price=uniform(1.0, 500.0),
+                    )
+                )
+
+        StoreProductRelation.objects.bulk_create(
+            store_products_to_add,
+            ignore_conflicts=True
+        )
+
+        after: int = StoreProductRelation.objects.count()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Created {after - before} Store-Product records."
+            )
+        )
+
+    def __generate_cart_items(self,) -> None:
         """
         Generates cart items for testing purposes.
         """
@@ -154,13 +224,15 @@ class Command(BaseCommand):
         before: int = CartItem.objects.count()
 
         users: QuerySet[CustomUser] = CustomUser.objects.all()
-        products: QuerySet[Product] = Product.objects.all()
+        store_products: QuerySet[StoreProductRelation] = (
+            StoreProductRelation.objects.all()
+        )
 
-        for _ in range(count):
+        for sp in store_products:
             created_items.append(
                 CartItem(
                     user=choice(users),
-                    product=choice(products),
+                    store_product=sp,
                     quantity=randint(1, 5),
                 )
             )
@@ -188,13 +260,9 @@ class Command(BaseCommand):
             created_orders.append(
                 Order(
                     user=choice(users),
-                    phone_number=f"+7701{randint(1000000,9999999)}",
-                    delivery_city=f"City {randint(1, 20)}",
-                    delivery_pickup_point=f"Pickup {randint(1, 50)}",
-                    delivery_personal_address=choice(
-                        [f"Street {randint(1, 50)}", None]
-                    ),
-                    requires_couriers_delivery=choice(["required", "not_required"]),
+                    phone_number=f"+7701{randint(1000000, 9999999)}",
+                    delivery_address=f"City: {randint(1, 20)},"
+                    f" Street: {randint(20, 40)}",
                     status=choice(["P", "S", "D"]),
                 )
             )
@@ -208,7 +276,7 @@ class Command(BaseCommand):
             )
         )
 
-    def __generate_order_items(self, count: int = 20) -> None:
+    def __generate_order_items(self,) -> None:
         """
         Generates order items for testing purposes.
         """
@@ -217,17 +285,18 @@ class Command(BaseCommand):
         before: int = OrderItem.objects.count()
 
         orders: QuerySet[Order] = Order.objects.all()
-        products: QuerySet[Product] = Product.objects.all()
+        store_products: QuerySet[StoreProductRelation] = (
+            StoreProductRelation.objects.select_related("product")
+        )
 
-        for _ in range(count):
-            product = choice(products)
+        for sp in store_products:
             created_items.append(
                 OrderItem(
                     order=choice(orders),
-                    product=product,
-                    name=product.name,
-                    price=product.price,
-                    quantity=randint(1, 3),
+                    store_product=sp,
+                    name=sp.product.name,
+                    quantity=randint(1, 5),
+                    price=sp.price,
                 )
             )
 
@@ -249,13 +318,13 @@ class Command(BaseCommand):
         before: int = Review.objects.count()
 
         products: QuerySet[Product] = Product.objects.all()
-        authors: QuerySet[CustomUser] = CustomUser.objects.all()
+        users: QuerySet[CustomUser] = CustomUser.objects.all()
 
         for _ in range(count):
             created_reviews.append(
                 Review(
                     product=choice(products),
-                    author=choice(authors),
+                    user=choice(users),
                     rate=randint(1, 5),
                     text=" ".join(choices(self.SOME_WORDS, k=10)).capitalize(),
                 )
@@ -278,9 +347,11 @@ class Command(BaseCommand):
         self.__generate_users(user_count=20)
         self.__generate_categories(category_count=20)
         self.__generate_products(product_count=20)
-        self.__generate_cart_items(count=20)
+        self.__generate_stores(count=20)
+        self.__generate_stores_products(products_per_store=5)
+        self.__generate_cart_items()
         self.__generate_orders(count=20)
-        self.__generate_order_items(count=20)
+        self.__generate_order_items()
         self.__generate_reviews(count=20)
 
         self.stdout.write(
